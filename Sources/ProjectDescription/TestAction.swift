@@ -3,8 +3,8 @@
 /// You can create a test action with either a set of test targets or test plans using the `.targets` or `.testPlans` static
 /// methods respectively.
 public struct TestAction: Equatable, Codable, Sendable {
-    /// List of test plans. The first in the list will be the default plan.
-    public var testPlans: [Path]?
+    /// Glob of test plans. The first in the array will be the default plan.
+    public var testPlans: [FileListGlob]?
 
     /// A list of testable targets, that are targets which are defined in the project with testable information.
     public var targets: [TestableTarget]
@@ -37,7 +37,7 @@ public struct TestAction: Equatable, Codable, Sendable {
     public var skippedTests: [String]?
 
     private init(
-        testPlans: [Path]?,
+        testPlans: [FileListGlob]?,
         targets: [TestableTarget],
         arguments: Arguments?,
         configuration: ConfigurationName,
@@ -112,6 +112,36 @@ public struct TestAction: Equatable, Codable, Sendable {
     /// - Returns: A test action.
     public static func testPlans(
         _ testPlans: [Path],
+        configuration: ConfigurationName = .debug,
+        attachDebugger: Bool = true,
+        preActions: [ExecutionAction] = [],
+        postActions: [ExecutionAction] = []
+    ) -> Self {
+        Self(
+            testPlans: testPlans.map { .glob($0) },
+            targets: [],
+            arguments: nil,
+            configuration: configuration,
+            attachDebugger: attachDebugger,
+            expandVariableFromTarget: nil,
+            preActions: preActions,
+            postActions: postActions,
+            options: .options(),
+            diagnosticsOptions: .options(),
+            skippedTests: nil
+        )
+    }
+
+    /// Returns a test action from a glob of test plans.
+    /// - Parameters:
+    ///   - testPlans: Glob of test plans to run.
+    ///   - configuration: Configuration to be used.
+    ///   - attachDebugger: A boolean controlling whether a debugger is attached to the process running the tests.
+    ///   - preActions: Actions to execute before running the tests.
+    ///   - postActions: Actions to execute after running the tests.
+    /// - Returns: A test action.
+    public static func testPlans(
+        _ testPlans: [FileListGlob],
         configuration: ConfigurationName = .debug,
         attachDebugger: Bool = true,
         preActions: [ExecutionAction] = [],

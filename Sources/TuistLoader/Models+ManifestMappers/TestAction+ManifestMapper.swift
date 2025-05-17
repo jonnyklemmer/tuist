@@ -29,10 +29,15 @@ extension XcodeGraph.TestAction {
         let fileSystem = FileSystem()
 
         if let plans = manifest.testPlans {
-            testPlans = try await plans.enumerated()
-                .map { $0 }
-                .concurrentCompactMap { index, path in
-                    let resolvedPath = try generatorPaths.resolve(path: path)
+            testPlans = try await plans
+                .concurrentFlatMap { fileListGlob in
+                    try await fileListGlob.unfold(
+                        generatorPaths: generatorPaths,
+                        fileSystem: fileSystem
+                    )
+                }
+                .enumerated()
+                .concurrentCompactMap { index, resolvedPath in
                     guard try await fileSystem.exists(resolvedPath) else { return nil }
                     return try await TestPlan.from(path: resolvedPath, isDefault: index == 0, generatorPaths: generatorPaths)
                 }
